@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Network Encapsulation and Decapsulation Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header-main">
+        <h1>Network Encapsulation and Decapsulation Simulator</h1>
+        <p>
+          Visual simulation of how data moves from sender to receiver through networking layers.
+        </p>
+      </div>
+      <div class="app-header-meta">
+        <div class="badge">TCP/IP Learning Lab</div>
+        <div class="mode-toggle">
+          <span>Mode:</span>
+          <button class="toggle-btn active" data-mode="simple">Simple</button>
+          <button class="toggle-btn" data-mode="advanced">Advanced</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Sender Panel -->
+      <section class="side-panel sender-panel">
+        <div class="device-header">
+          <div class="device-icon device-icon--sender"></div>
+          <div>
+            <h2>Sender</h2>
+            <span class="device-subtitle">Originating host</span>
+          </div>
+        </div>
+
+        <div class="card input-card">
+          <label for="messageInput" class="field-label">Message</label>
+          <textarea
+            id="messageInput"
+            class="message-input"
+            placeholder="Type a message to send across the network..."
+          ></textarea>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label for="appProtocol" class="field-label">Application Protocol</label>
+              <select id="appProtocol" class="select-input">
+                <option>HTTP</option>
+                <option>HTTPS</option>
+                <option>FTP</option>
+                <option>SMTP</option>
+                <option>DNS</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="transportProtocol" class="field-label">Transport Protocol</label>
+              <select id="transportProtocol" class="select-input">
+                <option>TCP</option>
+                <option>UDP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row field-row--compact">
+            <div class="field-group">
+              <label for="speedRange" class="field-label">Playback Speed</label>
+              <div class="speed-control">
+                <span>Slow</span>
+                <input type="range" id="speedRange" min="0" max="2" value="1" />
+                <span>Fast</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <button id="btnPlay" class="primary-btn">Play</button>
+            <button id="btnPause" class="ghost-btn">Pause</button>
+            <button id="btnPrev" class="ghost-btn">Previous</button>
+            <button id="btnNext" class="ghost-btn">Next</button>
+            <button id="btnReset" class="ghost-btn danger">Reset</button>
+          </div>
+
+          <div class="preset-row">
+            <span class="field-label">Presets:</span>
+            <button class="chip preset-btn" data-preset="Hello, Server!">
+              Hello, Server!
+            </button>
+            <button class="chip preset-btn" data-preset="GET /index.html HTTP/1.1">
+              Simple HTTP GET
+            </button>
+            <button class="chip preset-btn" data-preset="DNS query for example.com">
+              DNS Query
+            </button>
+          </div>
+        </div>
+
+        <div class="card stack-card">
+          <h3>Sender Stack</h3>
+          <div class="stack" id="senderStack">
+            <div class="stack-layer" data-layer="application" data-side="sender">
+              <span class="stack-title">Application</span>
+              <span class="stack-pdu">Data</span>
+              <span class="info-icon" data-tooltip="Interfaces with user applications and prepares data using protocols like HTTP, FTP, SMTP, DNS.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="transport" data-side="sender">
+              <span class="stack-title">Transport</span>
+              <span class="stack-pdu">Segment</span>
+              <span class="info-icon" data-tooltip="Provides end-to-end communication using TCP or UDP. Adds ports, sequencing, and reliability information.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="internet" data-side="sender">
+              <span class="stack-title">Internet</span>
+              <span class="stack-pdu">Packet</span>
+              <span class="info-icon" data-tooltip="Handles logical addressing and routing across networks using IP.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="data-link" data-side="sender">
+              <span class="stack-title">Data Link</span>
+              <span class="stack-pdu">Frame</span>
+              <span class="info-icon" data-tooltip="Connects to the local network using MAC addresses and adds frame headers and trailers.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="physical" data-side="sender">
+              <span class="stack-title">Physical</span>
+              <span class="stack-pdu">Bits</span>
+              <span class="info-icon" data-tooltip="Transmits raw bits as electrical, optical, or radio signals.">i</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Center Animation & PDU Representation -->
+      <section class="center-panel">
+        <div class="center-top">
+          <div class="legend card">
+            <h3>Legend</h3>
+            <div class="legend-row">
+              <span class="legend-swatch legend-swatch--data"></span>
+              <span>Application Data</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch legend-swatch--transport"></span>
+              <span>Transport Header</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch legend-swatch--internet"></span>
+              <span>IP Header</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch legend-swatch--datalink"></span>
+              <span>MAC Header / Trailer</span>
+            </div>
+            <div class="legend-row">
+              <span class="legend-swatch legend-swatch--bits"></span>
+              <span>Physical Bits</span>
+            </div>
+          </div>
+
+          <div class="info-panel card">
+            <h3>Current PDU</h3>
+            <div id="pduStructure" class="pdu-structure">
+              <div class="pdu-block pdu-block--data">Data</div>
+            </div>
+            <div id="pduMeta" class="pdu-meta"></div>
+          </div>
+
+          <div class="concept-panel card">
+            <h3>Current Layer Insight</h3>
+            <div class="concept-layer-title" id="layerInsightTitle">
+              No layer selected yet
+            </div>
+            <div class="concept-layer-mapping" id="layerInsightMapping">
+              Click Play or a layer in the stack to see how it maps between TCP/IP and OSI.
+            </div>
+            <ul class="concept-layer-points" id="layerInsightPoints"></ul>
+          </div>
+        </div>
+
+        <div class="flow-panel card">
+          <div class="flow-header">
+            <span class="flow-label flow-label--encap">Encapsulation</span>
+            <div class="flow-center-label">
+              <span class="flow-pdu-label" id="currentPduLabel">Data</span>
+              <span class="flow-arrow">⟶</span>
+              <span class="flow-path-label">Network Path</span>
+            </div>
+            <span class="flow-label flow-label--decap">Decapsulation</span>
+          </div>
+
+          <div class="flow-diagram">
+            <div class="flow-column flow-column--sender">
+              <div class="flow-layer-label" data-layer="application">Application</div>
+              <div class="flow-layer-label" data-layer="transport">Transport</div>
+              <div class="flow-layer-label" data-layer="internet">Internet</div>
+              <div class="flow-layer-label" data-layer="data-link">Data Link</div>
+              <div class="flow-layer-label" data-layer="physical">Physical</div>
+            </div>
+
+            <div class="flow-path">
+              <div class="flow-line flow-line--vertical flow-line--encap"></div>
+              <div class="flow-line flow-line--horizontal"></div>
+              <div class="flow-line flow-line--vertical flow-line--decap"></div>
+
+              <div id="pduToken" class="pdu-token">
+                <div class="pdu-token-inner">
+                  <span class="pdu-token-label">Data</span>
+                  <span class="pdu-token-sub">Sender</span>
+                </div>
+              </div>
+
+              <div class="bits-stream" id="bitsStream">
+                <span>010101010101</span>
+              </div>
+            </div>
+
+            <div class="flow-column flow-column--receiver">
+              <div class="flow-layer-label" data-layer="application">Application</div>
+              <div class="flow-layer-label" data-layer="transport">Transport</div>
+              <div class="flow-layer-label" data-layer="internet">Internet</div>
+              <div class="flow-layer-label" data-layer="data-link">Data Link</div>
+              <div class="flow-layer-label" data-layer="physical">Physical</div>
+            </div>
+          </div>
+
+          <div class="flow-footer">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <span id="stepStatus" class="step-status">Step 0 / 0 — Ready</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Receiver Panel -->
+      <section class="side-panel receiver-panel">
+        <div class="device-header">
+          <div class="device-icon device-icon--receiver"></div>
+          <div>
+            <h2>Receiver</h2>
+            <span class="device-subtitle" id="receiverStatus">Waiting</span>
+          </div>
+        </div>
+
+        <div class="card output-card">
+          <h3>Delivered Message</h3>
+          <div id="receiverMessage" class="receiver-message">No message received yet.</div>
+          <div class="status-pills">
+            <span class="status-pill" data-status="waiting">Waiting</span>
+            <span class="status-pill" data-status="receiving">Receiving</span>
+            <span class="status-pill" data-status="processing">Processing</span>
+            <span class="status-pill" data-status="delivered">Delivered</span>
+          </div>
+        </div>
+
+        <div class="card stack-card">
+          <h3>Receiver Stack</h3>
+          <div class="stack" id="receiverStack">
+            <div class="stack-layer" data-layer="application" data-side="receiver">
+              <span class="stack-title">Application</span>
+              <span class="stack-pdu">Data</span>
+              <span class="info-icon" data-tooltip="Delivers the original data to the receiving application in a form it can use.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="transport" data-side="receiver">
+              <span class="stack-title">Transport</span>
+              <span class="stack-pdu">Segment</span>
+              <span class="info-icon" data-tooltip="Removes transport headers, reorders and reassembles segments, and hands data to the application layer.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="internet" data-side="receiver">
+              <span class="stack-title">Internet</span>
+              <span class="stack-pdu">Packet</span>
+              <span class="info-icon" data-tooltip="Checks IP header, ensures the packet is addressed to this host, and removes the IP header.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="data-link" data-side="receiver">
+              <span class="stack-title">Data Link</span>
+              <span class="stack-pdu">Frame</span>
+              <span class="info-icon" data-tooltip="Validates the frame using FCS and extracts the packet for the internet layer.">i</span>
+            </div>
+            <div class="stack-layer" data-layer="physical" data-side="receiver">
+              <span class="stack-title">Physical</span>
+              <span class="stack-pdu">Bits</span>
+              <span class="info-icon" data-tooltip="Receives raw bits from the physical medium and converts them back into frames.">i</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Lower Panels -->
+    <section class="lower-panels">
+      <div class="card log-card">
+        <div class="log-card-header">
+          <h3>Packet Journey Log</h3>
+          <button id="btnClearLog" class="chip chip--ghost">Clear</button>
+        </div>
+        <div id="logContainer" class="log-container"></div>
+      </div>
+
+      <div class="card explain-card">
+        <h3>How Encapsulation and Decapsulation Work</h3>
+        <p>
+          As data travels from a sender to a receiver, it passes through networking layers.
+          Each layer adds its own header (and sometimes a trailer) to create a Protocol Data Unit (PDU).
+          This process is called <strong>encapsulation</strong>.
+        </p>
+        <p>
+          On the way back up the stack at the receiver, each layer removes its corresponding header,
+          restoring the original message. This reverse process is called <strong>decapsulation</strong>.
+        </p>
+        <ul class="explain-list">
+          <li><strong>Application Layer</strong> &mdash; works with user data and protocols like HTTP, FTP, SMTP, and DNS.</li>
+          <li><strong>Transport Layer</strong> &mdash; adds ports and reliability information (TCP/UDP), creating segments.</li>
+          <li><strong>Internet Layer</strong> &mdash; adds IP addresses and routing information, forming packets.</li>
+          <li><strong>Data Link Layer</strong> &mdash; adds MAC addresses and the frame check sequence (FCS), producing frames.</li>
+          <li><strong>Physical Layer</strong> &mdash; converts frames into streams of bits that move across the physical medium.</li>
+        </ul>
+        <p>
+          Use the controls above to step through every stage. Hover over headers and layer icons to see what each field means,
+          and watch how the PDU grows and then shrinks again as your message successfully reaches the receiver.
+        </p>
+
+        <h4 class="explain-subtitle">TCP/IP vs OSI Layers</h4>
+        <div class="model-compare">
+          <div>
+            <div class="model-heading">TCP/IP Model</div>
+            <ul>
+              <li>Application</li>
+              <li>Transport</li>
+              <li>Internet</li>
+              <li>Network Access (Data Link + Physical)</li>
+            </ul>
+          </div>
+          <div>
+            <div class="model-heading">Approximate OSI Match</div>
+            <ul>
+              <li>Application, Presentation, Session</li>
+              <li>Transport</li>
+              <li>Network</li>
+              <li>Data Link + Physical</li>
+            </ul>
+          </div>
+        </div>
+        <p class="model-note">
+          This simulator uses the 5-layer TCP/IP view (Application, Transport, Internet, Data Link, Physical) and
+          shows how each step of encapsulation and decapsulation lines up with the classic 7-layer OSI explanation.
+        </p>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      <span>Network Encapsulation and Decapsulation Simulator</span>
+      <span>&middot;</span>
+      <span>Built with HTML, CSS, and JavaScript</span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
+
